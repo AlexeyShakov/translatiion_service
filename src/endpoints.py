@@ -8,13 +8,15 @@ from db_connection import get_async_session
 from enums import StepNameChoice
 from models import Error, Post
 from shemas import NewsSchema
+from config import console_logger, logger
 
 router = APIRouter()
 
 POST_WITH_ERRORS = []
 
+
 @router.post("/traslate_news/", status_code=204)
-async def translate_news(news: list[NewsSchema], session: AsyncSession=Depends(get_async_session)):
+async def translate_news(news: list[NewsSchema], session: AsyncSession = Depends(get_async_session)):
     """
     news: Список новостей об одной футбольной команде с ее веб-страницы.
     """
@@ -44,21 +46,27 @@ async def make_translate_request(news: NewsSchema, db_session: AsyncSession, loc
             async with session.post(TRANSTLATION_URL, json=body, headers=headers) as resp:
                 if resp.status == 200:
                     print(await resp.json())
-                    # ЧТО-ТО НУЖНО ВЕРНУТЬ?????? TODO
+                    console_logger.info("Получен ответ от сервиса переводов")
                 else:
                     await _handle_erorr_when_translating(news, db_session, lock)
-                    # Добавить лог TODO
+                    console_logger.info(
+                        f"Сервис переводов вернул ошибку с кодом {resp.status} и текстом: {await resp.json()}"
+                    )
+                    logger.exception(f"Сервис переводов вернул ошибку с кодом {resp.status} и текстом: {await resp.json()}")
         except aiohttp.ClientConnectorError:
             await _handle_erorr_when_translating(news, db_session, lock)
+            logger.exception(f"Сервис переводов не отвечает")
         except Exception:
             await _handle_erorr_when_translating(news, db_session, lock)
-            # Добавить лог TODO
+            logger.exception(f"Сервис переводов не доступен по неизвестной ошибке")
+
 
 async def _handle_erorr_when_translating(news: NewsSchema, db_session: AsyncSession, lock: asyncio.Lock) -> None:
     post_query = select(Post).where(Post.title == news.title)
     result = await db_session.execute(post_query)
     async with lock:
         POST_WITH_ERRORS.append(result.scalars().first())
+
 
 async def _update_posts_with_errors(session: AsyncSession) -> None:
     global POST_WITH_ERRORS
