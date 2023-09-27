@@ -28,6 +28,9 @@ class Post(Base):
     link = Column(Text, nullable=False)
     title = Column(Text, nullable=False)
     short_description = Column(Text, nullable=False)
-    error_id = Column(Integer, ForeignKey('errors.id'), nullable=True, default=None)
 
+    translated_title = Column(Text, nullable=True, default=None)
+    translated_short_description = Column(Text, nullable=True, default=None)
+
+    error_id = Column(Integer, ForeignKey('errors.id'), nullable=True, default=None)
     error = relationship("Error", back_populates="posts", lazy="joined")
