@@ -15,6 +15,7 @@ TRANSTLATION_URL = "https://translate.api.cloud.yandex.net/translate/v2/translat
 YANDEX_API_KEY = os.getenv("IAMTOKEN")
 YANDEX_CATALOG = os.getenv("CATALOG")
 
+SERVICE_NAME = "translation"
 
 logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
