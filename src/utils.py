@@ -18,10 +18,10 @@ class NewsHandler:
     def __init__(self, news: list[NewsSchema], session: AsyncSession) -> None:
         self.lock = asyncio.Lock()
         self.session = session
-        self.handle_news(news)
+        self.news = news
 
-    def handle_news(self, news: list[NewsSchema]):
-        tasks = [asyncio.create_task(self.make_translate_request(element)) for element in news]
+    async def handle_news(self):
+        tasks = [asyncio.create_task(self.make_translate_request(element)) for element in self.news]
         await asyncio.gather(*tasks)
         if self.POST_WITH_ERRORS:
             await self.update_posts_with_errors(StepNameChoice.TRANSTALTION.name, self.POST_WITH_ERRORS)
