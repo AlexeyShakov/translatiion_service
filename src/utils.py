@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import asdict
 from typing import Sequence
 from sqlalchemy import select
-from config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL
+from config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL
 import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
 from config import console_logger, logger
@@ -99,10 +99,9 @@ class NewsHandler:
     async def send_news_to_telegram_service(self, news: list[NewsTranslatedSchema]) -> None:
         async with aiohttp.ClientSession() as session:
             try:
-                # Написать нормальный URL сервиса телеграмма TODO
                 data_for_telegram = [dict(element) for element in news]
-                async with session.post('http://something_228.com', json=data_for_telegram) as resp:
-                    if resp.status != 200:
+                async with session.post(TELEGRAM_URL, json=data_for_telegram) as resp:
+                    if resp.status != 204:
                         await self.update_posts_with_errors(StepNameChoice.SENDING_TO_TELEGRAM.name, news)
                         await self.update_post_with_translations(news)
                         return

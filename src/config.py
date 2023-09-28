@@ -17,6 +17,8 @@ YANDEX_CATALOG = os.getenv("CATALOG")
 
 SERVICE_NAME = "translation"
 
+TELEGRAM_URL = os.getenv("TELEGRAM_URL")
+
 logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
