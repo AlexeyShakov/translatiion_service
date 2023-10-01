@@ -1,14 +1,12 @@
 import asyncio
-from dataclasses import asdict
 from typing import Sequence
 from sqlalchemy import select
-from config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL
+from config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL, console_logger, logger
 import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
-from config import console_logger, logger
-from enums import StepNameChoice
-from shemas import NewsSchema, NewsTranslatedSchema, NewsBaseSchema
-from models import Error, Post as PostDB
+from utils.enums import StepNameChoice
+from utils.shemas import NewsSchema, NewsTranslatedSchema, NewsBaseSchema
+from db.models import Error, Post as PostDB
 
 
 class NewsHandler:
