@@ -10,21 +10,20 @@ from db.models import Error, Post as PostDB
 
 
 class NewsHandler:
-    POST_WITH_ERRORS = []
-    SUCCESS_NEWS = []
-
     def __init__(self, news: list[NewsSchema], session: AsyncSession) -> None:
         self.lock = asyncio.Lock()
         self.session = session
         self.news = news
+        self.post_with_errors = []
+        self.success_news = []
 
     async def handle_news(self):
         tasks = [asyncio.create_task(self.make_translate_request(element)) for element in self.news]
         await asyncio.gather(*tasks)
-        if self.POST_WITH_ERRORS:
-            await self.update_posts_with_errors(StepNameChoice.TRANSTALTION.name, self.POST_WITH_ERRORS)
-        if self.SUCCESS_NEWS:
-            await self.send_news_to_telegram_service(self.SUCCESS_NEWS)
+        if self.post_with_errors:
+            await self.update_posts_with_errors(StepNameChoice.TRANSTALTION.name, self.post_with_errors)
+        if self.success_news:
+            await self.send_news_to_telegram_service(self.success_news)
 
     async def make_translate_request(self, news: NewsSchema) -> None:
         async with aiohttp.ClientSession() as session:
@@ -48,11 +47,11 @@ class NewsHandler:
                             translated_title=response_body["translations"][1]["text"]
                         )
                         async with self.lock:
-                            self.SUCCESS_NEWS.append(translated_news)
+                            self.success_news.append(translated_news)
                         console_logger.info("Получен ответ от сервиса переводов")
                     else:
                         async with self.lock:
-                            self.POST_WITH_ERRORS.append(news)
+                            self.post_with_errors.append(news)
                         console_logger.info(
                             f"Сервис переводов вернул ошибку с кодом {resp.status} и текстом: {await resp.json()}"
                         )
@@ -60,11 +59,11 @@ class NewsHandler:
                             f"Сервис переводов вернул ошибку с кодом {resp.status} и текстом: {await resp.json()}")
             except aiohttp.ClientConnectorError:
                 async with self.lock:
-                    self.POST_WITH_ERRORS.append(news)
+                    self.post_with_errors.append(news)
                 logger.exception(f"Сервис переводов не отвечает")
             except Exception:
                 async with self.lock:
-                    self.POST_WITH_ERRORS.append(news)
+                    self.post_with_errors.append(news)
                 logger.exception(f"Сервис переводов не доступен по неизвестной ошибке")
 
     async def update_posts_with_errors(self, error_name: str, news: list[NewsBaseSchema]) -> None:
