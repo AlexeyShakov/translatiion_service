@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import SERVICE_NAME
-from db.db_connection import get_async_session
-from utils.shemas import NewsSchema
-from utils.funcs import NewsHandler
+from .config import SERVICE_NAME
+from src.db.db_connection import get_async_session
+from .utils.shemas import NewsSchema
+from .utils.funcs import NewsHandler
 
 router = APIRouter(prefix=f"/api/{SERVICE_NAME}")
 

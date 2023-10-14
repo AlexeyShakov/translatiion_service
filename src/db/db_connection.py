@@ -1,6 +1,6 @@
 from sqlalchemy import MetaData
 from sqlalchemy.ext.declarative import declarative_base
-from config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
+from src.config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from typing import AsyncGenerator

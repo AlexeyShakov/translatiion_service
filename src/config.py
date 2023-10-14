@@ -22,7 +22,7 @@ TELEGRAM_URL = os.getenv("TELEGRAM_URL")
 logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
-    file_handler = logging.FileHandler(os.path.join(Path(os.getcwd()).parent, "logs//logs.log"), encoding="utf-8")
+    file_handler = logging.FileHandler(os.path.join(Path(__file__).parent.parent, "logs//logs.log"), encoding="utf-8")
     file_handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(asctime)s - %(message)s')
     file_handler.setFormatter(formatter)
@@ -36,3 +36,9 @@ if not console_logger.handlers:
     formatter = logging.Formatter('%(levelname)s - %(asctime)s - %(message)s')
     console_handler.setFormatter(formatter)
     console_logger.addHandler(console_handler)
+
+OVER_HTTP = int(os.getenv("OVER_HTTP"))
+OVER_GRPC = int(os.getenv("OVER_GRPC"))
+OVER_QUEUE = int(os.getenv("OVER_QUEUE"))
+
+GRPC_TRANSLATION_PORT = os.getenv("GRPC_TRANSLATION_PORT")

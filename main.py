@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from config import SERVICE_NAME
-from endpoints import router
+from src.config import SERVICE_NAME
+from src.endpoints import router
 
 app = FastAPI(
     openapi_url=f"/api/{SERVICE_NAME}/openapi.json",
