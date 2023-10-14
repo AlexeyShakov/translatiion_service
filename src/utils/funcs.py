@@ -1,7 +1,10 @@
 import asyncio
 from typing import Sequence
 from sqlalchemy import select
-from src.config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL, console_logger, logger
+
+from src.custom_exceptions import SenderNotFound
+from src.config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL, console_logger, logger, \
+    OVER_HTTP, OVER_QUEUE, OVER_GRPC
 import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
 from .enums import StepNameChoice
@@ -94,6 +97,18 @@ class NewsHandler:
         return result.scalars().all()
 
     async def send_news_to_telegram_service(self, news: list[NewsTranslatedSchema]) -> None:
+        if OVER_HTTP:
+            return await self.send_news_to_telegram_service_by_http(news)
+        if OVER_QUEUE:
+            return
+        if OVER_GRPC:
+            return await self.send_news_to_telegram_service_by_grpc(news)
+        raise SenderNotFound()
+
+    async def send_news_to_telegram_service_by_grpc(self, news: list[NewsTranslatedSchema]) -> None:
+        pass
+
+    async def send_news_to_telegram_service_by_http(self, news: list[NewsTranslatedSchema]) -> None:
         async with aiohttp.ClientSession() as session:
             try:
                 data_for_telegram = [dict(element) for element in news]

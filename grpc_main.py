@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional
 
-from grpc_translations import translation_pb2, translation_pb2_grpc
+from grpc_service import translation_pb2, translation_pb2_grpc
 import grpc
 
 from src.config import logger, console_logger, GRPC_TRANSLATION_PORT
