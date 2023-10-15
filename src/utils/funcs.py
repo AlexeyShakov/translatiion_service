@@ -4,12 +4,15 @@ from sqlalchemy import select
 
 from src.custom_exceptions import SenderNotFound
 from src.config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL, console_logger, logger, \
-    OVER_HTTP, OVER_QUEUE, OVER_GRPC
+    OVER_HTTP, OVER_QUEUE, OVER_GRPC, GRPC_TELEGRAM_PORT
 import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
 from .enums import StepNameChoice
 from .shemas import NewsSchema, NewsTranslatedSchema, NewsBaseSchema
 from src.db.models import Error, Post as PostDB
+
+from grpc_service import telegram_pb2, telegram_pb2_grpc
+import grpc
 
 
 class NewsHandler:
@@ -106,7 +109,38 @@ class NewsHandler:
         raise SenderNotFound()
 
     async def send_news_to_telegram_service_by_grpc(self, news: list[NewsTranslatedSchema]) -> None:
-        pass
+        channel = grpc.aio.insecure_channel(f"localhost:{GRPC_TELEGRAM_PORT}")
+        stub = telegram_pb2_grpc.NewsTelegramStub(channel)
+        data_to_send = [
+            telegram_pb2.OneTranslatedNews(id={"id": post.id}, link={"link": post.link},
+                                           translated_title={"translated_title": post.translated_title},
+                                           translated_short_description={
+                                               "translated_short_description": post.translated_short_description})
+            for post in news]
+        try:
+            await stub.GetNews(telegram_pb2.TranslatedNews(
+                news=data_to_send
+            ))
+            console_logger.info("Данные успешно переданые на микросервис управлением телеграмма")
+        except grpc.aio.AioRpcError as rpc_error:
+            if rpc_error.code() == grpc.StatusCode.INVALID_ARGUMENT:
+                logger.exception("Ошибка в валидации данных на сервисе телеграмма")
+                console_logger.exception("Ошибка в валидации данных на сервисе телеграмма")
+            elif rpc_error.code() == grpc.StatusCode.UNAVAILABLE:
+                logger.exception("Сервис телеграма недоступен")
+                console_logger.exception("Сервис телеграма недоступен")
+            else:
+                logger.exception("Неизвестная ошибка на сервисе телеграмма")
+                console_logger.exception("Неизвестная ошибка на сервисе телеграмма")
+            await self.update_posts_with_errors(StepNameChoice.SENDING_TO_TELEGRAM.name, news)
+            await self.update_post_with_translations(news)
+        except Exception:
+            logger.exception("Неизвестная ошибка при попытки отправить данные на сервис телеграмма")
+            console_logger.exception("Неизвестная ошибка при попытки отправить данные на сервис телеграмма")
+            await self.update_posts_with_errors(StepNameChoice.SENDING_TO_TELEGRAM.name, news)
+            await self.update_post_with_translations(news)
+        finally:
+            await channel.close()
 
     async def send_news_to_telegram_service_by_http(self, news: list[NewsTranslatedSchema]) -> None:
         async with aiohttp.ClientSession() as session:
