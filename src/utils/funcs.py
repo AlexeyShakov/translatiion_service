@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from src.custom_exceptions import SenderNotFound
 from src.config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL, console_logger, logger, \
-    OVER_HTTP, OVER_QUEUE, OVER_GRPC, GRPC_TELEGRAM_PORT
+    OVER_HTTP, OVER_QUEUE, OVER_GRPC, GRPC_TELEGRAM_PORT, RABBITMQ_USER, RABBITMQ_PASS, TELEGRAM_QUEUE
 import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
 from .enums import StepNameChoice
@@ -13,6 +13,10 @@ from src.db.models import Error, Post as PostDB
 
 from grpc_service import telegram_pb2, telegram_pb2_grpc
 import grpc
+
+import base64
+import json
+from aio_pika import DeliveryMode, Message, connect
 
 
 class NewsHandler:
@@ -103,7 +107,7 @@ class NewsHandler:
         if OVER_HTTP:
             return await self.send_news_to_telegram_service_by_http(news)
         if OVER_QUEUE:
-            return
+            return await self.send_news_to_telegram_service_by_queue(news)
         if OVER_GRPC:
             return await self.send_news_to_telegram_service_by_grpc(news)
         raise SenderNotFound()
@@ -162,3 +166,24 @@ class NewsHandler:
                 console_logger.exception("Неизвестная ошибка при попытки отправить данные на сервис телеграмма")
                 await self.update_posts_with_errors(StepNameChoice.SENDING_TO_TELEGRAM.name, news)
                 await self.update_post_with_translations(news)
+
+    async def send_news_to_telegram_service_by_queue(self, news: list[NewsTranslatedSchema]) -> None:
+        data_for_telegram = [dict(element) for element in news]
+        connection = await connect(f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@localhost/")
+        async with connection:
+            channel = await connection.channel()
+
+            # Объявление очереди
+            await channel.declare_queue(
+                TELEGRAM_QUEUE,
+                durable=True,
+            )
+            news_as_bytes = base64.b64encode(str.encode(json.dumps(data_for_telegram), 'utf-8'))
+            await channel.default_exchange.publish(
+                Message(
+                    news_as_bytes,
+                    delivery_mode=DeliveryMode.PERSISTENT
+                ),
+                routing_key=TELEGRAM_QUEUE,
+            )
+            console_logger.info("Новость отправлена")

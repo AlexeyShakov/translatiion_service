@@ -7,3 +7,4 @@ python-dotenv==1.0.0
 fastapi[all]==0.95.0
 grpcio==1.59.0
 grpcio-tools==1.59.0
+aio-pika==9.3.0
