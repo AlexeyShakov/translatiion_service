@@ -17,7 +17,10 @@ YANDEX_CATALOG = os.getenv("CATALOG")
 
 SERVICE_NAME = "translation"
 
-TELEGRAM_URL = os.getenv("TELEGRAM_URL")
+TELEGRAM_PORT = os.getenv("TELEGRAM_PORT")
+TELEGRAM_CONTAINER = os.getenv("TELEGRAM_CONTAINER")
+
+TELEGRAM_URL = f"http://{TELEGRAM_CONTAINER}:{TELEGRAM_PORT}/api/telegram/publish_news/"
 
 logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
