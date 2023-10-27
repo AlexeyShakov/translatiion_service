@@ -4,7 +4,8 @@ from sqlalchemy import select
 
 from src.custom_exceptions import SenderNotFound
 from src.config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL, console_logger, logger, \
-    OVER_HTTP, OVER_QUEUE, OVER_GRPC, GRPC_TELEGRAM_PORT, RABBITMQ_USER, RABBITMQ_PASS, TELEGRAM_QUEUE
+    OVER_HTTP, OVER_QUEUE, OVER_GRPC, GRPC_TELEGRAM_PORT, RABBITMQ_USER, RABBITMQ_PASS, TELEGRAM_QUEUE, \
+    TELEGRAM_CONTAINER
 import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
 from .enums import StepNameChoice
@@ -113,7 +114,7 @@ class NewsHandler:
         raise SenderNotFound()
 
     async def send_news_to_telegram_service_by_grpc(self, news: list[NewsTranslatedSchema]) -> None:
-        channel = grpc.aio.insecure_channel(f"localhost:{GRPC_TELEGRAM_PORT}")
+        channel = grpc.aio.insecure_channel(f"{TELEGRAM_CONTAINER}:{GRPC_TELEGRAM_PORT}")
         stub = telegram_pb2_grpc.NewsTelegramStub(channel)
         data_to_send = [
             telegram_pb2.OneTranslatedNews(id={"id": post.id}, link={"link": post.link},
