@@ -1,5 +1,5 @@
 import asyncio
-from src.config import console_logger, TRANSLATION_QUEUE, RABBITMQ_USER, RABBITMQ_PASS, logger
+from src.config import console_logger, TRANSLATION_QUEUE, RABBITMQ_USER, RABBITMQ_PASS, logger, RABBIT_HOST
 
 from aio_pika import connect
 from aio_pika.abc import AbstractIncomingMessage
@@ -27,7 +27,7 @@ async def on_message(message: AbstractIncomingMessage) -> None:
 async def main() -> None:
     console_logger.info("В ожидании сообщений. Для выхода нажать CTRL+C")
 
-    connection = await connect(f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@localhost/")
+    connection = await connect(f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBIT_HOST}/")
 
     async with connection:
         channel = await connection.channel()

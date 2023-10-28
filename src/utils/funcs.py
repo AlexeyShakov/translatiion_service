@@ -5,7 +5,7 @@ from sqlalchemy import select
 from src.custom_exceptions import SenderNotFound
 from src.config import YANDEX_CATALOG, YANDEX_API_KEY, TRANSTLATION_URL, TELEGRAM_URL, console_logger, logger, \
     OVER_HTTP, OVER_QUEUE, OVER_GRPC, GRPC_TELEGRAM_PORT, RABBITMQ_USER, RABBITMQ_PASS, TELEGRAM_QUEUE, \
-    TELEGRAM_CONTAINER
+    TELEGRAM_CONTAINER, RABBIT_HOST
 import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
 from .enums import StepNameChoice
@@ -170,7 +170,7 @@ class NewsHandler:
 
     async def send_news_to_telegram_service_by_queue(self, news: list[NewsTranslatedSchema]) -> None:
         data_for_telegram = [dict(element) for element in news]
-        connection = await connect(f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@localhost/")
+        connection = await connect(f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASS}@{RABBIT_HOST}/")
         async with connection:
             channel = await connection.channel()
 
